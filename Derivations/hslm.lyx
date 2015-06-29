@@ -1,0 +1,569 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage{tikz}
+\usetikzlibrary{fit,positioning}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 0
+\use_package mhchem 1
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine natbib
+\cite_engine_type authoryear
+\biblio_style plainnat
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\branch Gammalt
+\selected 0
+\filename_suffix 0
+\color #faf0e6
+\end_branch
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Linear regression with horseshoe prior sampling: 
+\begin_inset Newline newline
+\end_inset
+
+The nitty gritty details 
+\end_layout
+
+\begin_layout Author
+Måns Magnusson
+\end_layout
+
+\begin_layout Section
+The MCMC sampler
+\end_layout
+
+\begin_layout Standard
+Below are derivations for a bayesian linear regression model with the horseshoe
+ prior in details.
+ I would like to use the horseshoe prior in one in my own models and had
+ a hard time finding how the MCMC sampler was derived in details.
+ Hopefully these derivation can help others.
+ 
+\end_layout
+
+\begin_layout Standard
+The linear model with the standard horseshoe prior can be expressed as follows.
+ 
+\begin_inset Formula 
+\begin{eqnarray*}
+\mathbf{y}|\beta,\sigma^{2},\mathbf{X} & \sim & \mbox{MVN}\left(\mathbf{X}\beta,\sigma^{2}\mathbf{I}_{n}\right)\\
+\beta_{i}|\tau,\lambda_{i},\sigma & \sim & \mbox{N}(0,\lambda_{i}^{2}\tau^{2}\sigma^{2})\\
+\sigma^{2} & \sim & \mbox{IG}\left(a_{n},b_{n}\right)\\
+\tau & \sim & C^{+}(0,1)\\
+\lambda_{i} & \sim & C^{+}(0,1)
+\end{eqnarray*}
+
+\end_inset
+
+where IG is the inverse-Gamma distribution, 
+\begin_inset Formula $C^{+}$
+\end_inset
+
+ is the positive truncated Cauchy distribution and MVN is the multivariate
+ normal distribution.
+ 
+\end_layout
+
+\begin_layout Standard
+The joint posterior can be expressed as 
+\begin_inset Formula 
+\begin{eqnarray*}
+p(\beta,\sigma^{2},\lambda_{1},...,\lambda_{p},\tau|\mathbf{y},\mathbf{X}) & \propto & p(\mathbf{y}|\mathbf{X},\beta,\sigma^{2})\cdot p(\beta,\sigma^{2},\lambda_{1},...,\lambda_{p},\tau)\\
+ & = & p(\mathbf{y}|\mathbf{X},\beta,\sigma^{2})\cdot p(\beta|\sigma^{2},\lambda_{1},...,\lambda_{p},\tau)\cdot p(\sigma^{2})\cdot p(\tau)\cdot\prod_{i}^{p}p(\lambda_{i})
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Sampling the regression coefficients
+\end_layout
+
+\begin_layout Standard
+The prior for 
+\begin_inset Formula $\beta$
+\end_inset
+
+ is 
+\begin_inset Formula 
+\[
+\Sigma_{\beta}=\sigma^{2}\varLambda_{0}^{-1}=\sigma^{2}\tau^{2}\left(\begin{array}{ccccc}
+\lambda_{1}^{2} & 0 & 0 & 0 & 0\\
+0 & \ddots & 0 & 0 & 0\\
+0 & 0 & \lambda_{i}^{2} & 0 & 0\\
+0 & 0 & 0 & \ddots & 0\\
+0 & 0 & 0 & 0 & \lambda_{p}^{2}
+\end{array}\right)
+\]
+
+\end_inset
+
+ and based on this we use the updates for the ordinary bayesian linear regressio
+n.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+p(\beta|\sigma^{2},\lambda_{1},...,\lambda_{p},\tau,\mathbf{y},\mathbf{X}) & \propto & p(\mathbf{y}|\mathbf{X},\beta,\sigma^{2})\cdot p(\beta|\sigma^{2},\lambda_{1},...,\lambda_{p},\tau)\\
+ & \propto & \exp\left(-\frac{1}{2\sigma^{2}}(\mathbf{y}-\mathbf{X}\beta)^{T}(\mathbf{y}-\mathbf{X}\beta)\right)\cdot\exp\left(-\frac{1}{2}\beta^{T}\Sigma_{\beta}^{-1}\beta\right)\\
+ & = & \exp\left(-\frac{1}{2\sigma^{2}}\left[(\mathbf{y}-\mathbf{X}\beta)^{T}(\mathbf{y}-\mathbf{X}\beta)+\sigma^{2}\beta^{T}\Sigma_{\beta}^{-1}\beta\right]\right)\\
+ & = & \exp\left(-\frac{1}{2\sigma^{2}}\left[\mathbf{y}^{T}\mathbf{y}-\mathbf{y}^{T}\mathbf{X}\beta-\beta^{T}\mathbf{X}^{T}\mathbf{y}+\beta^{T}\mathbf{X}^{T}\mathbf{X}\beta+\beta^{T}\varLambda_{0}\beta\right]\right)\\
+ & \propto & \exp\left(-\frac{1}{2\sigma^{2}}\left[\beta^{T}\varLambda_{n}\beta-\mathbf{y}^{T}\mathbf{X}\beta-\beta^{T}\mathbf{X}^{T}\mathbf{y}\right]\right)\\
+ & = & \exp\left(-\frac{1}{2\sigma^{2}}\left[\beta^{T}\varLambda_{n}\beta-\mu_{n}^{T}\varLambda_{n}\beta-\beta^{T}\varLambda_{n}\mu_{n}\right]\right)\\
+ & \propto & \exp\left(-\frac{1}{2\sigma^{2}}\left[\beta^{T}\varLambda_{n}\beta-\mu_{n}^{T}\varLambda_{n}\beta-\beta^{T}\varLambda_{n}\mu_{n}+\mu_{n}^{T}\varLambda_{n}\mu_{n}\right]\right)\\
+ & = & \exp\left(-\frac{1}{2\sigma^{2}}\left[(\beta-\mu_{n})^{T}\varLambda_{n}(\beta-\mu_{n})\right]\right)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula 
+\[
+\mu_{n}=\Lambda_{n}^{-1}\mathbf{X}^{T}\mathbf{y}
+\]
+
+\end_inset
+
+and 
+\begin_inset Formula 
+\[
+\Lambda_{n}=(\mathbf{X}^{T}\mathbf{X}+\Lambda_{0})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And hence 
+\begin_inset Formula 
+\[
+\beta\sim MVN(\mu_{n},\sigma^{2}\Lambda_{n}^{-1})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Sampling of 
+\begin_inset Formula $\sigma$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Samling of sigma with an invers gamma prior follows the standard approach
+ in bayesian linear regression.
+ The posterior distribution of 
+\begin_inset Formula $\sigma^{2}$
+\end_inset
+
+ is 
+\begin_inset Formula 
+\[
+\sigma^{2}\sim\mbox{IG}\left(a_{n},b_{n}\right)
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula 
+\begin{eqnarray*}
+a_{n} & = & a_{0}+\frac{n}{2}\\
+b_{n} & = & b_{0}+\frac{1}{2}\left(\mathbf{y}^{T}\mathbf{y}-\mu_{n}^{T}\Lambda_{n}\mu_{n}\right)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Sampling of 
+\begin_inset Formula $\tau$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+p(\tau|\lambda,\sigma,\beta) & \propto & p(\beta|\lambda,\tau,\sigma)\cdot p(\tau)\\
+ & = & \frac{1}{\sqrt{(2\pi)^{p}|\Sigma_{\beta}|}}\exp\left(-\frac{1}{2}(\beta^{\mathrm{T}}\Sigma_{\beta}^{-1}\beta)\right)\cdot\frac{2}{\pi}\cdot\frac{1}{1+\tau^{2}}\\
+ &  & \frac{1}{\sqrt{(2\pi)^{p}\sigma^{2p}\tau^{2p}\lambda_{1}^{2}\cdot\cdot\cdot\lambda_{i}^{2}\cdot\cdot\cdot\lambda_{p}^{2}}}\exp\left(-\frac{1}{2}(\beta^{\mathrm{T}}\Sigma_{\beta}^{-1}\beta)\right)\cdot\frac{2}{\pi}\cdot\frac{1}{1+\tau^{2}}\\
+ & \propto & \frac{1}{\tau^{p}}\exp\left(-\frac{1}{2}(\beta^{\mathrm{T}}\Sigma_{\beta}^{-1}\beta)\right)\cdot\frac{1}{1+\tau^{2}}\\
+ & = & \frac{1}{\tau^{p}}\exp\left(-\frac{1}{2\sigma^{2}\tau^{2}}\left(\sum_{i}\frac{\beta_{i}^{2}}{\lambda_{i}^{2}}\right)\right)\cdot\frac{1}{1+\tau^{2}}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We then set 
+\begin_inset Formula $\gamma=\frac{1}{\tau^{2}}$
+\end_inset
+
+ implies 
+\begin_inset Formula $\tau=\gamma^{-\frac{1}{2}}$
+\end_inset
+
+ with 
+\begin_inset Formula 
+\begin{eqnarray*}
+p(\gamma_{i}) & \propto & \gamma^{\frac{p}{2}}\exp\left(-\frac{1}{2\sigma^{2}}\left(\sum_{i}\frac{\beta_{i}^{2}}{\lambda_{i}^{2}}\right)\gamma\right)\cdot\frac{1}{1+\gamma^{-1}}\left|\frac{d}{d\gamma}\gamma_{i}^{-\frac{1}{2}}\right|\\
+ & = & \exp\left(-\frac{1}{2\sigma^{2}}\left(\sum_{i}\frac{\beta_{i}^{2}}{\lambda_{i}^{2}}\right)\gamma\right)\cdot\frac{\gamma^{\frac{p}{2}}}{\frac{\gamma+1}{\gamma}}\left|-\frac{1}{2}\gamma^{-\frac{3}{2}}\right|\\
+ & = & \exp\left(-\frac{1}{2\sigma^{2}}\left(\sum_{i}\frac{\beta_{i}^{2}}{\lambda_{i}^{2}}\right)\gamma\right)\cdot\frac{\gamma^{\frac{p+2}{2}}}{\gamma+1}\frac{1}{2}\gamma^{-\frac{3}{2}}\\
+ & \propto & \exp\left(-\frac{1}{2\sigma^{2}}\left(\sum_{i}\frac{\beta_{i}^{2}}{\lambda_{i}^{2}}\right)\gamma\right)\cdot\frac{1}{\gamma+1}\gamma^{\frac{p-1}{2}}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset CommandInset citation
+LatexCommand citet
+after "p. 6f."
+key "scott2010parameter"
+
+\end_inset
+
+ they sample from this (and 
+\begin_inset Formula $\tau^{2}$
+\end_inset
+
+) with slice sampling by defining 
+\begin_inset Formula $\gamma=\frac{1}{\tau^{2}}$
+\end_inset
+
+ (called 
+\begin_inset Formula $\eta_{i}$
+\end_inset
+
+ in 
+\begin_inset CommandInset citation
+LatexCommand citet
+after "p. 6f."
+key "Scott09flexiblelearning"
+
+\end_inset
+
+) and 
+\begin_inset Formula $\hat{\mu}^{2}=\sum_{p}^{P}\left(\frac{\beta_{p}}{\lambda_{p}}\right)^{2}/\sigma^{2}=\sum_{p}^{P}\left(\frac{\beta_{p}}{\lambda_{p}\sigma}\right)^{2}$
+\end_inset
+
+ with 
+\begin_inset Formula 
+\[
+p(\gamma|\lambda_{i},\hat{\mu})\propto\exp\left(-\frac{1}{2}\hat{\mu}^{2}\gamma\right)\gamma^{\frac{p-1}{2}}\frac{1}{1+\gamma}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To sample 
+\begin_inset Formula $\tau$
+\end_inset
+
+ we use the algorithm of using the same slice sampling procedure as in 
+\begin_inset CommandInset citation
+LatexCommand citet
+after "section 3.2"
+key "damlen1999gibbs"
+
+\end_inset
+
+.
+ Using this approach we get
+\begin_inset Formula 
+\begin{eqnarray*}
+l(\gamma) & = & \frac{1}{1+\gamma}\\
+\pi(\gamma) & = & \exp\left(-\frac{1}{2}\hat{\mu}^{2}\gamma\right)\gamma^{\frac{p-1}{2}}
+\end{eqnarray*}
+
+\end_inset
+
+so 
+\begin_inset Formula $\pi$
+\end_inset
+
+ is a gamma distribution with 
+\begin_inset Formula $\alpha=(p+1)/2$
+\end_inset
+
+ and 
+\begin_inset Formula $\beta=\hat{\mu}^{2}$
+\end_inset
+
+ we sample 
+\begin_inset Formula 
+\begin{eqnarray*}
+u & \sim & U(0,(1+\gamma)^{-1})\\
+\gamma & \sim & \mbox{G}\left(\alpha=\frac{1}{2}(p+1),\beta=\frac{1}{2}\hat{\mu}^{2}\right)I(\gamma<(1-u)/u)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $I()$
+\end_inset
+
+ indicates the truncation region.
+\end_layout
+
+\begin_layout Standard
+After sampling we transform back to 
+\begin_inset Formula $\tau$
+\end_inset
+
+by 
+\begin_inset Formula $\tau=\gamma^{-\frac{1}{2}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Sampling of 
+\begin_inset Formula $\lambda_{i}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+p(\beta|\lambda,\tau,\sigma)\cdot p(\lambda_{i}) & = & \frac{1}{\sqrt{(2\pi)^{p}|\Sigma_{\beta}|}}\exp\left(-\frac{1}{2}(\beta^{\mathrm{T}}\Sigma_{\beta}^{-1}\beta\right)\cdot\frac{2}{\pi}\cdot\frac{1}{1+\lambda_{i}^{2}}\\
+ &  & \frac{1}{\sqrt{(2\pi)^{p}\sigma^{2p}\tau^{2p}\lambda_{1}^{2}\cdot\cdot\cdot\lambda_{i}^{2}\cdot\cdot\cdot\lambda_{p}^{2}}}\exp\left(-\frac{1}{2}(\beta^{\mathrm{T}}\Sigma_{\beta}^{-1}\beta\right)\cdot\frac{2}{\pi}\cdot\frac{1}{1+\lambda_{i}^{2}}\\
+ & \propto & \frac{1}{\lambda_{i}}\exp\left(-\frac{1}{2\tau^{2}\sigma^{2}}\left(\sum_{i}\frac{\beta_{i}^{2}}{\lambda_{i}^{2}}\right)\right)\cdot\frac{1}{1+\lambda_{i}^{2}}\\
+ & \propto & \frac{1}{\lambda_{i}}\exp\left(-\frac{\beta_{i}^{2}}{2\sigma^{2}\tau^{2}\lambda_{i}^{2}}\right)\cdot\frac{1}{1+\lambda_{i}^{2}}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We then set 
+\begin_inset Formula $\gamma_{i}=\frac{1}{\lambda_{i}^{2}}$
+\end_inset
+
+ with 
+\begin_inset Formula $\lambda_{i}=\gamma_{i}^{-\frac{1}{2}}$
+\end_inset
+
+ with 
+\begin_inset Formula 
+\begin{eqnarray*}
+p(\gamma_{i}) & \propto & \gamma_{i}^{\frac{1}{2}}\exp\left(-\frac{\beta_{i}^{2}}{2\sigma^{2}\tau^{2}\gamma_{i}^{-1}}\right)\cdot\frac{1}{1+\gamma_{i}^{-1}}\left|\frac{d}{d\gamma}\gamma_{i}^{-\frac{1}{2}}\right|\\
+ & = & \exp\left(-\frac{\beta_{i}^{2}}{2\sigma^{2}\tau^{2}}\gamma_{i}\right)\cdot\frac{\gamma_{i}^{\frac{1}{2}}}{\frac{\gamma_{i}+1}{\gamma_{i}}}\left|-\frac{1}{2}\gamma_{i}^{-\frac{3}{2}}\right|\\
+ & = & \exp\left(-\frac{\beta_{i}^{2}}{2\sigma^{2}\tau^{2}}\gamma_{i}\right)\cdot\frac{\gamma_{i}^{\frac{3}{2}}}{\gamma_{i}+1}\frac{1}{2}\gamma_{i}^{-\frac{3}{2}}\\
+ & \propto & \exp\left(-\frac{\beta_{i}^{2}}{2\sigma^{2}\tau^{2}}\gamma_{i}\right)\cdot\frac{1}{\gamma_{i}+1}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In 
+\begin_inset CommandInset citation
+LatexCommand citet
+after "p. 9f."
+key "Scott09flexiblelearning"
+
+\end_inset
+
+ they sample from this (and 
+\begin_inset Formula $\tau^{2}$
+\end_inset
+
+) with slice sampling by defining 
+\begin_inset Formula $\gamma_{i}=\frac{1}{\lambda_{i}^{2}}$
+\end_inset
+
+ (called 
+\begin_inset Formula $\eta_{i}$
+\end_inset
+
+ in 
+\begin_inset CommandInset citation
+LatexCommand citet
+after "p. 9f."
+key "Scott09flexiblelearning"
+
+\end_inset
+
+) and 
+\begin_inset Formula $\hat{\mu_{i}}=\frac{\beta_{i}}{\tau\sigma}$
+\end_inset
+
+ with 
+\begin_inset Formula 
+\[
+p(\gamma_{i}|\tau,\hat{\mu_{i}})\propto\exp\left(-\frac{1}{2}\hat{\mu_{i}}^{2}\gamma_{i}\right)\frac{1}{1+\gamma_{i}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+To sample 
+\begin_inset Formula $\lambda_{i}$
+\end_inset
+
+ we use the algorithm of using the same slice sampling procedure as in 
+\begin_inset CommandInset citation
+LatexCommand citet
+after "section 3.2"
+key "damlen1999gibbs"
+
+\end_inset
+
+.
+ Using this approach we get
+\begin_inset Formula 
+\begin{eqnarray*}
+l(\gamma) & = & \frac{1}{1+\gamma_{i}}\\
+\pi(\gamma) & \propto & \exp\left(-\frac{1}{2}\hat{\mu_{i}}^{2}\gamma_{i}\right)
+\end{eqnarray*}
+
+\end_inset
+
+so we sample 
+\begin_inset Formula 
+\begin{eqnarray*}
+u & \sim & U(0,(1+\gamma_{i})^{-1})\\
+\gamma & \sim & \mbox{Exp}\left(\frac{1}{2}\hat{\mu_{i}}^{2}\right)I(\gamma<(1-u)/u)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $I()$
+\end_inset
+
+ indicates the truncation region.
+ After sampling 
+\begin_inset Formula $\gamma_{i}$
+\end_inset
+
+ we convert back to 
+\begin_inset Formula $\lambda_{i}$
+\end_inset
+
+ with 
+\begin_inset Formula $\lambda_{i}=\gamma_{i}^{-\frac{1}{2}}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "hslm"
+options "bibtotoc,elsarticle-harv"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
