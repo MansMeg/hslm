@@ -31,8 +31,8 @@
 #'  
 hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   # Assertions
-  stopifnot(is.matrix(y),
-            is.matrix(x),
+  stopifnot(is.matrix(y) | is.data.frame(y),
+            is.matrix(x) | is.data.frame(x),
             is.numeric(iter) & length(iter) == 1,
             is.logical(intercept) & length(intercept) == 1,
             is.numeric(ab) & length(ab) == 2 & all(ab > 0))
@@ -45,9 +45,9 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   }
   
   # Param storage
-  beta_bayes_hs <- matrix(as.numeric(NA),ncol=ncol(X), nrow=iter)
+  beta_bayes_hs <- matrix(as.numeric(NA),ncol=ncol(x), nrow=iter)
   sigma <- rep(as.numeric(NA), iter)
-  lambda <- gamma_l <- matrix(as.numeric(NA), ncol=length(use_var), nrow=iter)
+  lambda <- gamma_l <- matrix(as.numeric(NA), ncol=length(x), nrow=iter)
   tau <- gamma_t <- rep(as.numeric(NA), iter) 
   Lambda0 <- diag(lambda[1,])
 
@@ -55,10 +55,18 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   beta_bayes_hs[1,] <- 0
   lambda[1,] <- 1
   sigma[1] <- tau[1] <- 1
-  if(intercept){
-    x <- cbind(matrix(1.0, ncol=1, nrow=nrow(x)), x)
-  }
   
+  # Convert to matrices
+  y <- as.matrix(y)
+  if(intercept){
+    ff <- y~.
+  } else {
+    ff <- y~. -1
+  }
+  m <- model.frame(ff, x)
+  x <- model.matrix(ff, m)
+  rm(m)
+
   # Precalculations
   XtX <- t(x)%*%x
   Xty <- t(x)%*%y
