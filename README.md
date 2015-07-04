@@ -1,4 +1,4 @@
-# Bayesian linear regression using the horseshoe prior
+## Bayesian linear regression using the horseshoe prior
 
 As a part of my research I've become interested in the bayesian horseshoe prior for linear regression. But I had a hard time to find the nitty-gritty details of the derivations of the MCMC sampler or a simple implementation of the full MCMC sampler. This repo contains both the nitty-gritty details in deriving the sampler and a naive (slow) implementation in R.
 
