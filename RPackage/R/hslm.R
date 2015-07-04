@@ -56,7 +56,7 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   lambda[1,] <- 1
   sigma[1] <- tau[1] <- 1
   
-  # Convert to matrices
+  # Convert y and x to matrices
   y <- as.matrix(y)
   if(intercept){
     ff <- y~.
