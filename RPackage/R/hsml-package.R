@@ -10,4 +10,6 @@
 #' 
 #' @name hslm
 #' @docType package
+#' @importFrom mvtnorm rmvnorm
+#' 
 NULL

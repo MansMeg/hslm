@@ -28,7 +28,8 @@
 #' data(diabetes_x_train)
 #' data(diabetes_y_train)
 #' hs_res <- hslm(diabetes_y_train, diabetes_x_train)
-#'  
+#'
+#' @export
 hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   # Assertions
   stopifnot(is.matrix(y) | is.data.frame(y),
@@ -91,8 +92,7 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
     
     # Sampling sigma
     if(!is.null(ab)){
-      b_n <- b_0 + 0.5 * (yty - t(mu_n) %*% Lambda_n %*% mu_n)
-      sigma[it] <- sqrt(MCMCpack::rinvgamma(n=1, a_n, b_n))
+      sigma[it] <- draw_sigma(a_n, b_0, yty, mu_n, Lambda_n)
     }
     
     # Sampling lambda
