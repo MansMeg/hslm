@@ -29,10 +29,10 @@ draw_sigma <- function(a_n, b_0, yty, mu_n, Lambda_n){
 }
 
 
-#' Draw sigma
+#' Draw lambda
 #'
 #' @details 
-#' See the file derivations for details on how to draw sigma.
+#' See the file derivations for details on how to draw lambda.
 #'
 #' @param lambda Previous lambda draw
 #' @param beta Beta parameters
@@ -51,3 +51,28 @@ draw_lambda <- function(lambda, beta, sigma, tau){
   gamma_l <- qexp(u2, rate_lambda)
   return(1 / sqrt(gamma_l))
 }
+
+
+
+#' Draw tau
+#'
+#' @details 
+#' See the file derivations for details on how to draw tau.
+#'
+#' @inheritParams draw_lambda
+#' @param shape_tau Tau shape parameter
+#'
+#'
+draw_tau <- function(lambda, beta, sigma, tau){
+  shape_tau <- 0.5 * (length(lambda) + 1)
+  gamma_t <- 1 / tau^2
+  u1 <- runif(1, 0, 1 / (1 + gamma_t))
+  trunc_limit_tau <- (1 - u1) / u1
+  mu2_tau <- sum((beta / (sigma * lambda))^2)
+  rate_tau <- (mu2_tau / 2)
+  ub_tau <- pgamma(trunc_limit_tau, shape=shape_tau, rate=rate_tau)
+  u2 <- runif(1, 0, ub_tau)
+  gamma_t <- qgamma(p = u2, shape = shape_tau, rate = rate_tau)
+  return(1 / sqrt(gamma_t))
+}
+

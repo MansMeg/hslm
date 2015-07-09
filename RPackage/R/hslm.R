@@ -72,7 +72,6 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   XtX <- t(x)%*%x
   Xty <- t(x)%*%y
   yty <- t(y)%*%y
-  shape_tau <- 0.5 * (ncol(lambda) + 1)
   if(!is.null(ab)){
     a_n <- a_0 + length(y)/2
   } else {
@@ -102,15 +101,10 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
                                tau = tau[it-1])
     
     # Sampling tau
-    gamma_t[it] <- 1 / tau[it-1]^2
-    u1 <- runif(1, 0, 1 / (1 + gamma_t[it]))
-    trunc_limit_tau <- (1 - u1) / u1
-    mu2_tau <- sum((beta_bayes_hs[it, ] / (sigma[it] * lambda[it,]))^2)
-    rate_tau <- (mu2_tau / 2)
-    ub_tau <- pgamma(trunc_limit_tau, shape=shape_tau, rate=rate_tau)
-    u2 <- runif(1, 0, ub_tau)
-    gamma_t[it] <- qgamma(p = u2, shape = shape_tau, rate = rate_tau)
-    tau[it] <- 1 / sqrt(gamma_t[it])
+    tau[it] <- draw_tau(lambda = lambda[it,], 
+                        beta = beta_bayes_hs[it, ], 
+                        sigma = sigma[it], 
+                        tau = tau[it-1])
   }
   # Return results
   res <- list(beta=beta_bayes_hs,
