@@ -96,15 +96,10 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
     }
     
     # Sampling lambda
-    gamma_l[it,] <- 1 / lambda[it-1,]^2
-    u1 <- runif(ncol(lambda), 0, 1 / (1 + gamma_l[it,]))
-    trunc_limit <- (1 - u1) / u1
-    mu2_j <- (beta_bayes_hs[it, ] / (sigma[it] * tau[it-1]))^2
-    rate_lambda <- (mu2_j / 2)
-    ub_lambda <- pexp(trunc_limit, rate_lambda)
-    u2 <- runif(length(ub_lambda), 0, ub_lambda)
-    gamma_l[it,] <- qexp(u2, rate_lambda)
-    lambda[it,] <- 1 / sqrt(gamma_l[it,])
+    lambda[it,] <- draw_lambda(lambda = lambda[it-1,], 
+                               beta = beta_bayes_hs[it, ], 
+                               sigma = sigma[it], 
+                               tau = tau[it-1])
     
     # Sampling tau
     gamma_t[it] <- 1 / tau[it-1]^2

@@ -29,4 +29,25 @@ draw_sigma <- function(a_n, b_0, yty, mu_n, Lambda_n){
 }
 
 
-
+#' Draw sigma
+#'
+#' @details 
+#' See the file derivations for details on how to draw sigma.
+#'
+#' @param lambda Previous lambda draw
+#' @param beta Beta parameters
+#' @param sigma Sigma parameter
+#' @param tau Tau parameter
+#'
+#'
+draw_lambda <- function(lambda, beta, sigma, tau){
+  gamma_l <- 1 / lambda^2
+  u1 <- runif(length(lambda), 0, 1 / (1 + gamma_l))
+  trunc_limit <- (1 - u1) / u1
+  mu2_j <- (beta / (sigma * tau))^2
+  rate_lambda <- (mu2_j / 2)
+  ub_lambda <- pexp(trunc_limit, rate_lambda)
+  u2 <- runif(length(ub_lambda), 0, ub_lambda)
+  gamma_l <- qexp(u2, rate_lambda)
+  return(1 / sqrt(gamma_l))
+}
