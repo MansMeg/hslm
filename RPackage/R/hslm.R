@@ -80,14 +80,14 @@ hslm <- function(y, x, iter=2000, intercept=FALSE, ab=c(1,1)){
   
   # Sampling 
   for(it in 2:iter){
-    # Create Lambda0 matrix
+    # Calculate Lambda0, Lambda_n, Lambda_n_inv, mu_n
     diag(Lambda0) <- 1 / (lambda[it - 1,]^2 * tau[it - 1]^2)
-    
-    # Sampling beta
     Lambda_n <- XtX + Lambda0
     Lambda_n_inv <- solve(Lambda_n)
     mu_n <- Lambda_n_inv %*% Xty
-    beta_bayes_hs[it,] <- mvtnorm::rmvnorm(n=1, mean=mu_n, sigma = sigma[it-1]^2 * Lambda_n_inv)
+    
+    # Sampling beta
+    beta_bayes_hs[it,] <- draw_beta(mu_n, Lambda_n_inv, sigma = sigma[it-1])
     
     # Sampling sigma
     if(!is.null(ab)){
