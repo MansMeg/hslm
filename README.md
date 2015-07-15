@@ -17,7 +17,7 @@ A naive (slow) implementation in R as an R package has been put together in this
 
 ```
 install.packages("devtools")
-devtools::install_github("MansMeg/hslm")
+devtools::install_github("MansMeg/hslm", subdir = "RPackage")
 ```
 
 #### Basic usage
